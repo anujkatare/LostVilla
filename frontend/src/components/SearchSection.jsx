@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, Heart, Compass, AlertCircle } from 'lucide-react';
 import { resolveUrl } from '../config.js';
@@ -25,7 +25,7 @@ export default function SearchSection() {
   // Fetch results based on query and active filter chip
   const fetchSearchResults = () => {
     setLoading(true);
-    let url = `/api/posts?`;
+    let url = `${API_BASE}/api/posts?`;
     
     if (query.trim()) {
       url += `q=${encodeURIComponent(query.trim())}&`;
@@ -74,7 +74,7 @@ export default function SearchSection() {
   // Handle Likes inside search
   const handleLike = (postId, e) => {
     e.stopPropagation();
-    fetch(`/api/posts/${postId}/like`, { method: 'POST' })
+    fetch(`${API_BASE}/api/posts/${postId}/like`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.success) {

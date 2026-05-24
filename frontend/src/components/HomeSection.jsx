@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Search, Eye, Flame, Compass, Ghost, MessageSquare, Share2 } from 'lucide-react';
 import { resolveUrl, API_BASE } from '../config.js';
@@ -266,7 +266,7 @@ export default function HomeSection({ currentUser, theme }) {
   const fetchPosts = () => {
     setLoading(true);
     const isEditorialQuery = activeSubTab === 'foryou' ? 'true' : 'false';
-    fetch(`/api/posts?isEditorial=${isEditorialQuery}`)
+    fetch(`${API_BASE}/api/posts?isEditorial=${isEditorialQuery}`)
       .then(res => {
         if (!res.ok) throw new Error('API failed');
         return res.json();
@@ -288,7 +288,7 @@ export default function HomeSection({ currentUser, theme }) {
   // Handle post like count updates
   const handleLike = (postId, e) => {
     e.stopPropagation(); // Avoid triggering full details card click
-    fetch(`/api/posts/${postId}/like`, { method: 'POST' })
+    fetch(`${API_BASE}/api/posts/${postId}/like`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.success) {

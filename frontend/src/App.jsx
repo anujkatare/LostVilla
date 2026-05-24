@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import BottomNavbar from './components/BottomNavbar.jsx';
 import HomeSection from './components/HomeSection.jsx';
 import SearchSection from './components/SearchSection.jsx';
@@ -34,7 +34,7 @@ export default function App() {
 
   // Sync user profile state from API on load
   useEffect(() => {
-    fetch(`/api/users/${currentUser.username}`)
+    fetch(`${API_BASE}/api/users/${currentUser.username}`)
       .then(res => {
         if (res.ok) return res.json();
         throw new Error('Failed to load user');

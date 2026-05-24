@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2, FileText, BookOpen } from 'lucide-react';
 import { resolveUrl, API_BASE } from '../config.js';
@@ -27,7 +27,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
   // Fetch only posts submitted by this active user
   const fetchUserPosts = () => {
     setLoadingPosts(true);
-    fetch(`/api/posts`)
+    fetch(`${API_BASE}/api/posts`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch posts');
         return res.json();
@@ -92,7 +92,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
         formData.append('avatar', avatarFile);
       }
 
-      const response = await fetch(`${API_BASE}/api/users/profile', {
+      const response = await fetch(`${API_BASE}/api/users/profile`, {
         method: 'POST',
         body: formData
       });
@@ -120,7 +120,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
 
   const handleLike = (postId, e) => {
     e.stopPropagation();
-    fetch(`/api/posts/${postId}/like`, { method: 'POST' })
+    fetch(`${API_BASE}/api/posts/${postId}/like`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.success) {

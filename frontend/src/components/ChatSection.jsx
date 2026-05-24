@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Send, Users, ShieldAlert, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
 import { API_BASE, resolveUrl } from '../config.js';
@@ -48,7 +48,7 @@ export default function ChatSection({ currentUser }) {
 
   // Fetch past message logs from SQLite API when room switches
   const fetchRoomHistory = (roomName) => {
-    fetch(`/api/messages/${roomName}`)
+    fetch(`${API_BASE}/api/messages/${roomName}`)
       .then((res) => res.json())
       .then((data) => {
         setMessages(data);
