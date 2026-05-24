@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, Heart, Compass, AlertCircle } from 'lucide-react';
-import { resolveUrl } from '../config.js';
+import { resolveUrl, API_BASE } from '../config.js';
 
 export default function SearchSection() {
   const [query, setQuery] = useState('');
@@ -26,11 +26,11 @@ export default function SearchSection() {
   const fetchSearchResults = () => {
     setLoading(true);
     let url = `${API_BASE}/api/posts?`;
-    
+
     if (query.trim()) {
       url += `q=${encodeURIComponent(query.trim())}&`;
     }
-    
+
     if (activeChip !== 'All') {
       // Map standard chips to tags
       const tagMap = {
@@ -86,10 +86,10 @@ export default function SearchSection() {
 
   return (
     <div className="flex flex-col gap-6">
-      
+
       {/* Real-time Search Input Field */}
       <div className="relative w-full max-w-[640px] mx-auto">
-        <input 
+        <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -107,11 +107,10 @@ export default function SearchSection() {
             <button
               key={chip}
               onClick={() => setActiveChip(chip)}
-              className={`snap-center shrink-0 text-sm font-bold px-5 py-2 rounded-full transition-all duration-300 border-none active:scale-95 ${
-                isActive 
-                  ? 'bg-ink text-white dark:bg-white dark:text-black shadow-md' 
-                  : 'bg-surface-card hover:bg-secondary-bg dark:bg-surface-card-dark dark:hover:bg-secondary-bg-dark text-ink dark:text-white'
-              }`}
+              className={`snap-center shrink-0 text-sm font-bold px-5 py-2 rounded-full transition-all duration-300 border-none active:scale-95 ${isActive
+                ? 'bg-ink text-white dark:bg-white dark:text-black shadow-md'
+                : 'bg-surface-card hover:bg-secondary-bg dark:bg-surface-card-dark dark:hover:bg-secondary-bg-dark text-ink dark:text-white'
+                }`}
             >
               {chip}
             </button>
@@ -152,16 +151,16 @@ export default function SearchSection() {
               {/* Media element */}
               {post.mediaUrl ? (
                 post.mediaType === 'video' ? (
-                  <video 
-                    src={resolveUrl(post.mediaUrl || '')} 
+                  <video
+                    src={resolveUrl(post.mediaUrl || '')}
                     className="w-full h-auto object-cover max-h-[360px]"
                     muted
                     loop
                     playsInline
                   />
                 ) : (
-                  <img 
-                    src={resolveUrl(post.mediaUrl || '')} 
+                  <img
+                    src={resolveUrl(post.mediaUrl || '')}
                     alt={post.title}
                     className="w-full h-auto object-cover max-h-[400px] transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
@@ -180,7 +179,7 @@ export default function SearchSection() {
 
               {/* Hover Metadata block */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 text-white">
-                
+
                 {/* tags */}
                 <div className="flex flex-wrap gap-1 items-start self-start">
                   {(post.tags || '').split(',').map((t, idx) => (
@@ -199,7 +198,7 @@ export default function SearchSection() {
                     <span className="text-[10px] text-stone/90 truncate max-w-[120px]">
                       By {post.authorName}
                     </span>
-                    <button 
+                    <button
                       onClick={(e) => handleLike(post.id, e)}
                       className="flex items-center gap-1 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full hover:bg-primary-pressed transition-all active:scale-90"
                     >
@@ -218,7 +217,7 @@ export default function SearchSection() {
       <AnimatePresence>
         {selectedPost && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.7 }}
               exit={{ opacity: 0 }}
@@ -234,16 +233,16 @@ export default function SearchSection() {
               {selectedPost.mediaUrl && (
                 <div className="w-full aspect-video relative bg-surface-card">
                   {selectedPost.mediaType === 'video' ? (
-                    <video 
-                      src={resolveUrl(selectedPost.mediaUrl || '')} 
+                    <video
+                      src={resolveUrl(selectedPost.mediaUrl || '')}
                       className="w-full h-full object-cover"
                       controls
                       autoPlay
                     />
                   ) : (
-                    <img 
-                      src={resolveUrl(selectedPost.mediaUrl || '')} 
-                      alt={selectedPost.title} 
+                    <img
+                      src={resolveUrl(selectedPost.mediaUrl || '')}
+                      alt={selectedPost.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.src = 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=720';
@@ -265,9 +264,9 @@ export default function SearchSection() {
                 </h2>
                 <div className="flex justify-between items-center py-2 border-y border-hairline dark:border-hairline-dark my-1">
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={resolveUrl(selectedPost.authorAvatar || '')} 
-                      alt={selectedPost.authorName} 
+                    <img
+                      src={resolveUrl(selectedPost.authorAvatar || '')}
+                      alt={selectedPost.authorName}
                       className="w-8 h-8 rounded-full object-cover border border-hairline dark:border-hairline-dark"
                     />
                     <span className="text-sm font-bold text-ink dark:text-white">

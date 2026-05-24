@@ -7,7 +7,7 @@ import ChatSection from './components/ChatSection.jsx';
 import ProfileSection from './components/ProfileSection.jsx';
 import { Ghost, Moon, Sun, ChevronDown, Flame, Compass, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { resolveUrl } from './config.js';
+import { resolveUrl, API_BASE } from './config.js';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -102,7 +102,7 @@ export default function App() {
                 Lost Villa
               </span>
             </div>
-            
+
             {/* Mobile Dropdown Trigger */}
             <button
               onClick={handleToggleMenu}
@@ -111,9 +111,8 @@ export default function App() {
             >
               <ChevronDown
                 size={18}
-                className={`text-mute hover:text-primary transition-transform duration-300 ${
-                  isMenuOpen ? 'rotate-180 text-primary' : ''
-                }`}
+                className={`text-mute hover:text-primary transition-transform duration-300 ${isMenuOpen ? 'rotate-180 text-primary' : ''
+                  }`}
               />
             </button>
           </div>
@@ -196,8 +195,8 @@ export default function App() {
                 ) : (
                   <div className="flex flex-col gap-2.5">
                     {history.map((hist) => (
-                      <div 
-                        key={hist.id} 
+                      <div
+                        key={hist.id}
                         onClick={() => {
                           setIsMenuOpen(false);
                           setActiveTab('home');
@@ -224,7 +223,7 @@ export default function App() {
                 <h4 className="text-xs uppercase font-extrabold tracking-wider text-mute dark:text-mute-dark mb-1 flex items-center gap-1.5">
                   <Ghost size={12} className="text-primary" /> Lost Villa Codex
                 </h4>
-                <button 
+                <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     setActiveTab('home');
@@ -236,7 +235,7 @@ export default function App() {
                 >
                   Rules of the Scribe
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     setActiveTab('home');
@@ -248,7 +247,7 @@ export default function App() {
                 >
                   Privacy & Policies
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     setActiveTab('home');
