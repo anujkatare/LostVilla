@@ -1,16 +1,21 @@
-$pattern = '\(([a-zA-Z?.]+\s*\|\|\s*'''')\s*\)\s*\.startsWith\(''http''\)\s*\?\s*([a-zA-Z?.]+)\s*:\s*`http://localhost:5050\$\{([a-zA-Z?.]+)\}`'
-$replacement = 'resolveUrl($1)'
-
 $files = @(
-  'c:\Users\WINDOWS 11\Documents\LostVilla\frontend\src\components\SearchSection.jsx',
-  'c:\Users\WINDOWS 11\Documents\LostVilla\frontend\src\components\ProfileSection.jsx',
-  'c:\Users\WINDOWS 11\Documents\LostVilla\frontend\src\components\HomeSection.jsx',
-  'c:\Users\WINDOWS 11\Documents\LostVilla\frontend\src\components\ChatSection.jsx'
+  'frontend\src\components\HomeSection.jsx',
+  'frontend\src\components\SearchSection.jsx',
+  'frontend\src\components\ProfileSection.jsx',
+  'frontend\src\components\ChatSection.jsx',
+  'frontend\src\App.jsx'
 )
 
+$base = 'c:\Users\WINDOWS 11\Documents\LostVilla'
+
 foreach ($f in $files) {
-  $content = [System.IO.File]::ReadAllText($f, [System.Text.Encoding]::UTF8)
-  $updated = [System.Text.RegularExpressions.Regex]::Replace($content, $pattern, $replacement)
-  [System.IO.File]::WriteAllText($f, $updated, [System.Text.Encoding]::UTF8)
-  Write-Host "Done: $f"
+  $path = Join-Path $base $f
+  $content = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
+
+  # Replace fetch('/api/ with fetch(`${API_BASE}/api/
+  $content = $content -replace "fetch\(`/api/", 'fetch(`${API_BASE}/api/'
+  $content = $content -replace "fetch\('/api/", 'fetch(`${API_BASE}/api/'
+
+  [System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)
+  Write-Host "Fixed: $f"
 }

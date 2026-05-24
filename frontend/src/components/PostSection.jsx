@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, CheckCircle, AlertTriangle, FileVideo, FileImage } from 'lucide-react';
+import { API_BASE } from '../config.js';
 
 export default function PostSection({ currentUser, onPostCreated }) {
   const [title, setTitle] = useState('');
@@ -160,14 +161,18 @@ export default function PostSection({ currentUser, onPostCreated }) {
         formData.append('media', file);
       });
 
-      const response = await fetch('/api/posts', {
+      const response = await fetch(`${API_BASE}/api/posts`, {
         method: 'POST',
         body: formData
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit sighting.');
+        let errorMsg = 'Failed to submit sighting.';
+        try {
+          const data = await response.json();
+          errorMsg = data.error || errorMsg;
+        } catch (_) {}
+        throw new Error(errorMsg);
       }
 
       // Success - reset fields and redirect

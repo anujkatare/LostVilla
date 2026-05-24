@@ -92,7 +92,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
         formData.append('avatar', avatarFile);
       }
 
-      const response = await fetch('/api/users/profile', {
+      const response = await fetch(`${API_BASE}/api/users/profile', {
         method: 'POST',
         body: formData
       });

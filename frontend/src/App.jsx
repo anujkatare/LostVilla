@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import BottomNavbar from './components/BottomNavbar.jsx';
 import HomeSection from './components/HomeSection.jsx';
 import SearchSection from './components/SearchSection.jsx';
