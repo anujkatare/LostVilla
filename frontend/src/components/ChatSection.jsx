@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Send, Users, ShieldAlert, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { API_BASE, resolveUrl } from '../config.js';
 
 export default function ChatSection({ currentUser }) {
   const [activeRoom, setActiveRoom] = useState('public'); // 'public' or a dynamic DM room
@@ -15,8 +16,8 @@ export default function ChatSection({ currentUser }) {
 
   // Initialize socket connection to backend
   useEffect(() => {
-    // Port 5050 is our Express API port hosting socket.io
-    const socketUrl = 'http://localhost:5050';
+    // Use API_BASE from config (auto-switches between dev and prod)
+    const socketUrl = API_BASE;
     socketRef.current = io(socketUrl);
 
     socketRef.current.on('connect', () => {
@@ -208,7 +209,7 @@ export default function ChatSection({ currentUser }) {
                   className={`flex gap-2.5 max-w-[85%] ${isMine ? 'self-end flex-row-reverse' : 'self-start'}`}
                 >
                   <img 
-                    src={(msg.senderAvatar || '').startsWith('http') ? msg.senderAvatar : `http://localhost:5050${msg.senderAvatar}`} 
+                    src={resolveUrl(msg.senderAvatar || '')} 
                     alt={msg.senderName} 
                     className="w-7 h-7 rounded-full object-cover border border-hairline dark:border-hairline-dark mt-0.5 shrink-0"
                     onError={(e) => {

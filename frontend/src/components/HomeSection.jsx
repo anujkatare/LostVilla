@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Search, Eye, Flame, Compass, Ghost, MessageSquare, Share2 } from 'lucide-react';
+import { resolveUrl, API_BASE } from '../config.js';
 
 // Dedicated component to render media (including support for image carousels and videos)
 function PostMediaRenderer({ post, isModal = false, onClick = null }) {
@@ -35,9 +36,7 @@ function PostMediaRenderer({ post, isModal = false, onClick = null }) {
     imageUrls = [post.mediaUrl];
   }
 
-  const getFullUrl = (url) => {
-    return url.startsWith('http') ? url : `http://localhost:5050${url}`;
-  };
+  const getFullUrl = (url) => resolveUrl(url);
 
   if (post.mediaType === 'video') {
     return (
@@ -314,7 +313,7 @@ export default function HomeSection({ currentUser, theme }) {
             <div className="flex items-center justify-between p-4 border-b border-hairline/40 dark:border-hairline-dark/40">
               <div className="flex items-center gap-2.5">
                 <img
-                  src={(post.authorAvatar || '').startsWith('http') ? post.authorAvatar : `http://localhost:5050${post.authorAvatar}`}
+                  src={resolveUrl(post.authorAvatar || '')}
                   alt={post.authorName}
                   className="w-8 h-8 rounded-full object-cover border border-hairline dark:border-hairline-dark"
                   onError={(e) => {
@@ -427,7 +426,7 @@ export default function HomeSection({ currentUser, theme }) {
               {/* Asymmetric Illustration Column */}
               <div className="w-full lg:w-1/2 rounded-md overflow-hidden aspect-[4/5] bg-surface-card">
                 <img
-                  src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`}
+                  src={resolveUrl(post.mediaUrl || '')}
                   alt={post.title}
                   className="w-full h-full object-cover transform hover:scale-102 transition-transform duration-700"
                   onError={(e) => {
@@ -706,7 +705,7 @@ export default function HomeSection({ currentUser, theme }) {
                 <div className="flex justify-between items-center py-2.5 border-y border-hairline dark:border-hairline-dark my-1">
                   <div className="flex items-center gap-2.5">
                     <img
-                      src={(selectedPost.authorAvatar || '').startsWith('http') ? selectedPost.authorAvatar : `http://localhost:5050${selectedPost.authorAvatar}`}
+                      src={resolveUrl(selectedPost.authorAvatar || '')}
                       alt={selectedPost.authorName}
                       className="w-9 h-9 rounded-full object-cover border border-hairline dark:border-hairline-dark"
                       onError={(e) => {

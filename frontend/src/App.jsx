@@ -7,6 +7,7 @@ import ChatSection from './components/ChatSection.jsx';
 import ProfileSection from './components/ProfileSection.jsx';
 import { Ghost, Moon, Sun, ChevronDown, Flame, Compass, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { resolveUrl } from './config.js';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -138,7 +139,7 @@ export default function App() {
                 }`}
             >
               <img
-                src={(currentUser?.avatarUrl || '').startsWith('http') ? currentUser.avatarUrl : `http://localhost:5050${currentUser.avatarUrl}`}
+                src={resolveUrl(currentUser?.avatarUrl || '')}
                 alt={currentUser.username}
                 className="w-full h-full object-cover"
                 onError={(e) => {

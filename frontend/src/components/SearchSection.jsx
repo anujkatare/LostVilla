@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, Heart, Compass, AlertCircle } from 'lucide-react';
+import { resolveUrl } from '../config.js';
 
 export default function SearchSection() {
   const [query, setQuery] = useState('');
@@ -152,7 +153,7 @@ export default function SearchSection() {
               {post.mediaUrl ? (
                 post.mediaType === 'video' ? (
                   <video 
-                    src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`} 
+                    src={resolveUrl(post.mediaUrl || '')} 
                     className="w-full h-auto object-cover max-h-[360px]"
                     muted
                     loop
@@ -160,7 +161,7 @@ export default function SearchSection() {
                   />
                 ) : (
                   <img 
-                    src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`} 
+                    src={resolveUrl(post.mediaUrl || '')} 
                     alt={post.title}
                     className="w-full h-auto object-cover max-h-[400px] transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
@@ -234,14 +235,14 @@ export default function SearchSection() {
                 <div className="w-full aspect-video relative bg-surface-card">
                   {selectedPost.mediaType === 'video' ? (
                     <video 
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`} 
+                      src={resolveUrl(selectedPost.mediaUrl || '')} 
                       className="w-full h-full object-cover"
                       controls
                       autoPlay
                     />
                   ) : (
                     <img 
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`} 
+                      src={resolveUrl(selectedPost.mediaUrl || '')} 
                       alt={selectedPost.title} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -265,7 +266,7 @@ export default function SearchSection() {
                 <div className="flex justify-between items-center py-2 border-y border-hairline dark:border-hairline-dark my-1">
                   <div className="flex items-center gap-2">
                     <img 
-                      src={(selectedPost.authorAvatar || '').startsWith('http') ? selectedPost.authorAvatar : `http://localhost:5050${selectedPost.authorAvatar}`} 
+                      src={resolveUrl(selectedPost.authorAvatar || '')} 
                       alt={selectedPost.authorName} 
                       className="w-8 h-8 rounded-full object-cover border border-hairline dark:border-hairline-dark"
                     />

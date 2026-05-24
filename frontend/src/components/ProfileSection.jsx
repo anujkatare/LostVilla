@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2, FileText, BookOpen } from 'lucide-react';
+import { resolveUrl, API_BASE } from '../config.js';
 
 export default function ProfileSection({ currentUser, setCurrentUser }) {
   const [userPosts, setUserPosts] = useState([]);
@@ -152,7 +153,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
         {/* Profile Avatar Frame (larger size layout) */}
         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-primary shrink-0 relative bg-surface-card shadow-md">
           <img 
-            src={(currentUser?.avatarUrl || '').startsWith('http') ? currentUser.avatarUrl : `http://localhost:5050${currentUser.avatarUrl}`} 
+            src={resolveUrl(currentUser?.avatarUrl || '')} 
             alt={currentUser.username} 
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -315,14 +316,14 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
                 {post.mediaUrl ? (
                   post.mediaType === 'video' ? (
                     <video 
-                      src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`} 
+                      src={resolveUrl(post.mediaUrl || '')} 
                       className="w-full h-auto object-cover max-h-[300px]"
                       muted
                       loop
                     />
                   ) : (
                     <img 
-                      src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`} 
+                      src={resolveUrl(post.mediaUrl || '')} 
                       alt={post.title}
                       className="w-full h-auto object-cover max-h-[350px] transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
@@ -421,7 +422,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
                 <div className="flex flex-col gap-1.5 items-center bg-surface-soft dark:bg-canvas-dark/40 p-4 rounded-md border border-hairline dark:border-hairline-dark">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary relative bg-surface-card mb-2">
                     <img 
-                      src={avatarPreview || ((currentUser?.avatarUrl || '').startsWith('http') ? currentUser.avatarUrl : `http://localhost:5050${currentUser.avatarUrl}`)} 
+                      src={avatarPreview || (resolveUrl(currentUser?.avatarUrl || ''))} 
                       alt="Preview" 
                       className="w-full h-full object-cover"
                     />
@@ -531,14 +532,14 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
                 <div className="w-full aspect-video relative bg-surface-card">
                   {selectedPost.mediaType === 'video' ? (
                     <video 
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`} 
+                      src={resolveUrl(selectedPost.mediaUrl || '')} 
                       className="w-full h-full object-cover"
                       controls
                       autoPlay
                     />
                   ) : (
                     <img 
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`} 
+                      src={resolveUrl(selectedPost.mediaUrl || '')} 
                       alt={selectedPost.title} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -572,7 +573,7 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
                 <div className="flex justify-between items-center py-2 border-y border-hairline dark:border-hairline-dark my-1">
                   <div className="flex items-center gap-2">
                     <img 
-                      src={(selectedPost.authorAvatar || '').startsWith('http') ? selectedPost.authorAvatar : `http://localhost:5050${selectedPost.authorAvatar}`} 
+                      src={resolveUrl(selectedPost.authorAvatar || '')} 
                       alt={selectedPost.authorName} 
                       className="w-8 h-8 rounded-full object-cover border border-hairline dark:border-hairline-dark"
                     />
