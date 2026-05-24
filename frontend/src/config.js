@@ -1,12 +1,8 @@
 // Central API configuration
-// In development: uses localhost:5050
-// In production (Vercel): uses the same origin with /_/backend prefix
+// In development: uses localhost:5050 via Vite proxy
+// In production: uses VITE_API_BASE env variable (set in Vercel dashboard)
 
-const isProd = import.meta.env.PROD;
-
-export const API_BASE = isProd
-  ? '/_/backend'
-  : 'http://localhost:5050';
+export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5050';
 
 // Helper: resolve a media/avatar URL to absolute
 export const resolveUrl = (url) => {
