@@ -1,6 +1,187 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Search, Eye, Flame, Compass, Ghost } from 'lucide-react';
+import { Heart, Search, Eye, Flame, Compass, Ghost, MessageSquare, Share2 } from 'lucide-react';
+
+// Dedicated component to render media (including support for image carousels and videos)
+function PostMediaRenderer({ post, isModal = false, onClick = null }) {
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+
+  if (!post.mediaUrl) {
+    if (isModal) return null;
+    return (
+      <div 
+        onClick={onClick}
+        className="w-full py-16 px-8 bg-surface-dark flex flex-col justify-between text-white border-y border-stone/10 cursor-pointer"
+      >
+        <Flame className="text-primary mb-4" size={24} />
+        <p className="font-display font-bold text-lg leading-tight tracking-tight">
+          {post.title}
+        </p>
+      </div>
+    );
+  }
+
+  // Parse mediaUrl
+  let imageUrls = [];
+  const isMultiImage = post.mediaUrl.startsWith('[');
+  
+  if (isMultiImage) {
+    try {
+      imageUrls = JSON.parse(post.mediaUrl);
+    } catch (e) {
+      imageUrls = [post.mediaUrl];
+    }
+  } else {
+    imageUrls = [post.mediaUrl];
+  }
+
+  const getFullUrl = (url) => {
+    return url.startsWith('http') ? url : `http://localhost:5050${url}`;
+  };
+
+  if (post.mediaType === 'video') {
+    return (
+      <div className="w-full relative bg-surface-soft dark:bg-canvas-dark flex items-center justify-center select-none aspect-video">
+        <video
+          src={getFullUrl(post.mediaUrl)}
+          className={`w-full h-full object-contain ${isModal ? 'max-h-[50vh]' : 'max-h-[480px]'}`}
+          muted={!isModal}
+          loop
+          playsInline
+          controls={isModal}
+          onClick={(e) => {
+            if (!isModal) {
+              e.stopPropagation();
+              const video = e.target;
+              if (video.paused) video.play();
+              else video.pause();
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Carousel Render for Multiple Images
+  if (isMultiImage && imageUrls.length > 1) {
+    const handlePrev = (e) => {
+      e.stopPropagation();
+      setCurrentIndex(prev => (prev === 0 ? imageUrls.length - 1 : prev - 1));
+    };
+
+    const handleNext = (e) => {
+      e.stopPropagation();
+      setCurrentIndex(prev => (prev === imageUrls.length - 1 ? 0 : prev + 1));
+    };
+
+    // Swipe gesture support
+    const [touchStart, setTouchStart] = React.useState(null);
+    const [touchEnd, setTouchEnd] = React.useState(null);
+
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+      setTouchEnd(null);
+      setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => {
+      setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = (e) => {
+      if (!touchStart || !touchEnd) return;
+      const distance = touchStart - touchEnd;
+      const isLeftSwipe = distance > minSwipeDistance;
+      const isRightSwipe = distance < -minSwipeDistance;
+      
+      if (isLeftSwipe) {
+        handleNext(e);
+      } else if (isRightSwipe) {
+        handlePrev(e);
+      }
+    };
+
+    return (
+      <div 
+        className="w-full relative bg-surface-soft dark:bg-canvas-dark group overflow-hidden select-none aspect-video flex items-center justify-center"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Images slider */}
+        <div 
+          onClick={onClick}
+          className="w-full h-full relative cursor-pointer flex items-center justify-center"
+        >
+          <img
+            src={getFullUrl(imageUrls[currentIndex])}
+            alt={`${post.title} - ${currentIndex + 1}`}
+            className={`w-full h-full object-contain transition-all duration-300 ${isModal ? 'max-h-[50vh]' : 'max-h-[500px]'}`}
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=500';
+            }}
+          />
+        </div>
+
+        {/* Carousel Chevron Left (Always visible on mobile/tablets, hover opacity on desktop) */}
+        <button
+          onClick={handlePrev}
+          className="absolute left-3 p-1.5 rounded-full bg-black/40 hover:bg-black/75 text-white transition-all transform active:scale-95 opacity-80 lg:opacity-0 lg:group-hover:opacity-80 lg:hover:opacity-100 flex items-center justify-center z-10 shadow-md"
+        >
+          <svg className="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
+        {/* Carousel Chevron Right (Always visible on mobile/tablets, hover opacity on desktop) */}
+        <button
+          onClick={handleNext}
+          className="absolute right-3 p-1.5 rounded-full bg-black/40 hover:bg-black/75 text-white transition-all transform active:scale-95 opacity-80 lg:opacity-0 lg:group-hover:opacity-80 lg:hover:opacity-100 flex items-center justify-center z-10 shadow-md"
+        >
+          <svg className="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+
+        {/* Indicator Dots */}
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-10 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">
+          {imageUrls.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentIndex(idx);
+              }}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                currentIndex === idx ? 'bg-primary scale-110' : 'bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Single Image Render
+  return (
+    <div 
+      onClick={onClick}
+      className="w-full h-full relative cursor-pointer overflow-hidden bg-surface-soft dark:bg-canvas-dark flex items-center justify-center select-none"
+    >
+      <img
+        src={getFullUrl(imageUrls[0])}
+        alt={post.title}
+        className={`w-full h-auto object-contain ${isModal ? 'max-h-[50vh] w-full' : 'max-h-[500px]'}`}
+        loading="lazy"
+        onError={(e) => {
+          e.target.src = 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=500';
+        }}
+      />
+    </div>
+  );
+}
 
 export default function HomeSection({ currentUser, theme }) {
   const [activeSubTab, setActiveSubTab] = useState('feed'); // 'feed' or 'foryou'
@@ -164,67 +345,38 @@ export default function HomeSection({ currentUser, theme }) {
             </div>
 
             {/* 2. Media Area / Main Card Content Block */}
-            <div 
-              onClick={() => handleSelectPost(post)}
-              className="cursor-pointer overflow-hidden bg-surface-soft dark:bg-canvas-dark flex items-center justify-center relative select-none"
-            >
-              {post.mediaUrl ? (
-                post.mediaType === 'video' ? (
-                  <video
-                    src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`}
-                    className="w-full h-auto object-contain max-h-[480px]"
-                    muted
-                    loop
-                    playsInline
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const video = e.target;
-                      if (video.paused) video.play();
-                      else video.pause();
-                    }}
-                  />
-                ) : (
-                  <img
-                    src={(post.mediaUrl || '').startsWith('http') ? post.mediaUrl : `http://localhost:5050${post.mediaUrl}`}
-                    alt={post.title}
-                    className="w-full h-auto object-contain max-h-[500px]"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=500';
-                    }}
-                  />
-                )
-              ) : (
-                <div className="w-full py-16 px-8 bg-surface-dark flex flex-col justify-between text-white border-y border-stone/10">
-                  <Flame className="text-primary mb-4" size={24} />
-                  <p className="font-display font-bold text-lg leading-tight tracking-tight">
-                    {post.title}
-                  </p>
-                </div>
-              )}
-            </div>
+            <PostMediaRenderer post={post} onClick={() => handleSelectPost(post)} />
 
             {/* 3. Interactions & Description Chronicle */}
             <div className="p-4 flex flex-col gap-3">
-              {/* Action row (Likes & Comments/Read) */}
+              {/* Action Bar (Likes, Comments, Share, Read) */}
               <div className="flex items-center justify-between pb-2 border-b border-hairline/20 dark:border-hairline-dark/20">
-                <button
-                  onClick={(e) => handleLike(post.id, e)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white text-xs font-bold transition-all transform active:scale-95 border border-stone/5"
-                >
-                  <Heart size={14} className={post.likes > 0 ? "text-primary fill-primary" : "text-ink dark:text-white"} />
-                  <span>{post.likes} research marks</span>
-                </button>
-
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => handleLike(post.id, e)}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white text-xs font-bold transition-all transform active:scale-95 border border-stone/5"
+                  >
+                    <Heart size={14} className={post.likes > 0 ? "text-primary fill-primary" : "text-ink dark:text-white"} />
+                    <span>{post.likes}</span>
+                  </button>
+                  <button className="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white text-xs transition-all transform active:scale-95 border border-stone/5">
+                    <MessageSquare size={14} className="text-mute dark:text-mute-dark" />
+                    <span>0</span>
+                  </button>
+                  <button className="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white text-xs transition-all transform active:scale-95 border border-stone/5">
+                    <Share2 size={14} className="text-mute dark:text-mute-dark" />
+                    <span>0</span>
+                  </button>
+                </div>
                 <button
                   onClick={() => handleSelectPost(post)}
-                  className="text-xs font-bold text-primary hover:text-primary-pressed transition-colors py-1 px-3"
+                  className="text-xs font-bold text-primary hover:text-primary-pressed transition-colors"
                 >
-                  Exhume Secrets →
+                  Read →
                 </button>
               </div>
 
-              {/* Title & Chronicle Snippet */}
+              {/* Title, Description & Tags */}
               <div className="flex flex-col gap-1">
                 <h4 className="text-sm font-extrabold text-ink dark:text-white leading-tight">
                   {post.title}
@@ -233,7 +385,7 @@ export default function HomeSection({ currentUser, theme }) {
                   {post.content}
                 </p>
                 {post.content && post.content.length > 150 && (
-                  <button 
+                  <button
                     onClick={() => handleSelectPost(post)}
                     className="text-[11px] font-bold text-mute dark:text-mute-dark hover:text-primary dark:hover:text-primary self-start mt-0.5"
                   >
@@ -242,7 +394,6 @@ export default function HomeSection({ currentUser, theme }) {
                 )}
               </div>
 
-              {/* Tags block */}
               <div className="flex flex-wrap gap-1 mt-1">
                 {(post.tags || '').split(',').map((t, idx) => (
                   <span key={idx} className="bg-secondary-bg/60 dark:bg-secondary-bg-dark/60 text-mute dark:text-mute-dark text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-md border border-stone/5">
@@ -251,6 +402,7 @@ export default function HomeSection({ currentUser, theme }) {
                 ))}
               </div>
             </div>
+
 
           </motion.div>
         ))}
@@ -517,26 +669,10 @@ export default function HomeSection({ currentUser, theme }) {
               className="relative z-10 bg-canvas dark:bg-surface-card-dark w-full max-w-[720px] max-h-[85vh] rounded-lg overflow-y-auto shadow-ambient dark:shadow-ambient-dark flex flex-col"
             >
 
-              {/* Top Banner (Optional Video or Image) */}
+              {/* Top Banner (Optional Video or Image Carousel) */}
               {selectedPost.mediaUrl && (
-                <div className="w-full aspect-video relative bg-surface-card">
-                  {selectedPost.mediaType === 'video' ? (
-                    <video
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`}
-                      className="w-full h-full object-cover"
-                      controls
-                      autoPlay
-                    />
-                  ) : (
-                    <img
-                      src={(selectedPost.mediaUrl || '').startsWith('http') ? selectedPost.mediaUrl : `http://localhost:5050${selectedPost.mediaUrl}`}
-                      alt={selectedPost.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=720';
-                      }}
-                    />
-                  )}
+                <div className="w-full aspect-video relative bg-surface-card flex items-center justify-center">
+                  <PostMediaRenderer post={selectedPost} isModal={true} />
                 </div>
               )}
 

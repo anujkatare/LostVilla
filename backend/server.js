@@ -99,18 +99,29 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-// Create new post
-app.post('/api/posts', upload.single('media'), async (req, res) => {
+// Create new post (supports multiple photos OR a single video)
+app.post('/api/posts', upload.array('media', 10), async (req, res) => {
   try {
     const { title, content, tags, type, isAi, isEditorial, authorName, authorAvatar } = req.body;
     let mediaUrl = null;
     let mediaType = null;
 
-    if (req.file) {
-      // Create static path link
-      mediaUrl = `/uploads/${req.file.filename}`;
-      const ext = path.extname(req.file.originalname).toLowerCase();
-      mediaType = ['.mp4', '.mov', '.avi'].includes(ext) ? 'video' : 'image';
+    if (req.files && req.files.length > 0) {
+      const files = req.files;
+      const urls = files.map(file => `/uploads/${file.filename}`);
+      
+      // Determine media type from the first file's extension
+      const firstExt = path.extname(files[0].originalname).toLowerCase();
+      const isVideo = ['.mp4', '.mov', '.avi'].includes(firstExt);
+      mediaType = isVideo ? 'video' : 'image';
+
+      if (isVideo) {
+        // Enforce single video storage
+        mediaUrl = urls[0];
+      } else {
+        // If multiple images, store as JSON array. Otherwise store as single string.
+        mediaUrl = urls.length > 1 ? JSON.stringify(urls) : urls[0];
+      }
     }
 
     const newPost = await Post.create({
