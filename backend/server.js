@@ -6,7 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { initDb, Post, User, Message } from './database/db.js';
+import { initDb, Post, User, Message, Follower } from './database/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -224,6 +224,99 @@ app.post('/api/users/sync', async (req, res) => {
       }
     }
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get follow status of a guest profile
+app.get('/api/users/:username/follow-status', async (req, res) => {
+  try {
+    const { follower } = req.query;
+    if (!follower) return res.json({ isFollowing: false });
+
+    const connection = await Follower.findOne({
+      where: {
+        followerName: follower,
+        followingName: req.params.username
+      }
+    });
+
+    res.json({ isFollowing: !!connection });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Follow a user
+app.post('/api/users/:username/follow', async (req, res) => {
+  try {
+    const { followerName } = req.body;
+    const followingName = req.params.username;
+
+    if (followerName === followingName) {
+      return res.status(400).json({ error: 'You cannot follow yourself.' });
+    }
+
+    const existing = await Follower.findOne({ where: { followerName, followingName } });
+    if (existing) {
+      return res.json({ success: true, message: 'Already following' });
+    }
+
+    await Follower.create({ followerName, followingName });
+
+    const followedUser = await User.findOne({ where: { username: followingName } });
+    const followerUser = await User.findOne({ where: { username: followerName } });
+
+    if (followedUser) {
+      followedUser.followersCount += 1;
+      await followedUser.save();
+    }
+
+    if (followerUser) {
+      followerUser.followingCount += 1;
+      await followerUser.save();
+    }
+
+    res.json({
+      success: true,
+      followersCount: followedUser ? followedUser.followersCount : 0,
+      followingCount: followerUser ? followerUser.followingCount : 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Unfollow a user
+app.post('/api/users/:username/unfollow', async (req, res) => {
+  try {
+    const { followerName } = req.body;
+    const followingName = req.params.username;
+
+    const deleted = await Follower.destroy({ where: { followerName, followingName } });
+    if (deleted > 0) {
+      const followedUser = await User.findOne({ where: { username: followingName } });
+      const followerUser = await User.findOne({ where: { username: followerName } });
+
+      if (followedUser && followedUser.followersCount > 0) {
+        followedUser.followersCount -= 1;
+        await followedUser.save();
+      }
+
+      if (followerUser && followerUser.followingCount > 0) {
+        followerUser.followingCount -= 1;
+        await followerUser.save();
+      }
+
+      res.json({
+        success: true,
+        followersCount: followedUser ? followedUser.followersCount : 0,
+        followingCount: followerUser ? followerUser.followingCount : 0
+      });
+    } else {
+      res.json({ success: false, error: 'Not following' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

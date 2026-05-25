@@ -34,6 +34,26 @@ export const User = sequelize.define('User', {
   pronouns: {
     type: DataTypes.STRING,
     defaultValue: 'they/them'
+  },
+  followersCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  followingCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  }
+});
+
+// Follower Schema (Join Table)
+export const Follower = sequelize.define('Follower', {
+  followerName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  followingName: {
+    type: DataTypes.STRING,
+    allowNull: false
   }
 });
 

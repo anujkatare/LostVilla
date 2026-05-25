@@ -23,12 +23,18 @@ export default function App() {
   const [viewedUser, setViewedUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [history, setHistory] = useState([]);
+  const [activeChatTarget, setActiveChatTarget] = useState(null);
 
   const handleTabChange = (tab) => {
     if (tab === 'profile') {
       setViewedUser(null); // Reset when navigating to own profile
     }
     setActiveTab(tab);
+  };
+
+  const handleMessageUser = (targetUsername) => {
+    setActiveChatTarget(targetUsername);
+    setActiveTab('chat');
   };
 
   const handleUserClick = (username, avatarUrl) => {
@@ -150,7 +156,14 @@ export default function App() {
           />
         );
       case 'chat':
-        return <ChatSection currentUser={currentUser} session={session} />;
+        return (
+          <ChatSection 
+            currentUser={currentUser} 
+            session={session} 
+            activeChatTarget={activeChatTarget}
+            onChatLoaded={() => setActiveChatTarget(null)}
+          />
+        );
       case 'profile':
         return (
           <ProfileSection
@@ -159,6 +172,7 @@ export default function App() {
             session={session}
             viewedUser={viewedUser}
             onBackToOwnProfile={() => setViewedUser(null)}
+            onMessageUser={handleMessageUser}
           />
         );
       case 'signup':

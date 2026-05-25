@@ -4,12 +4,13 @@ import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2
 import { resolveUrl, API_BASE } from '../config.js';
 import { supabase } from '../supabase.js';
 
-export default function ProfileSection({ currentUser, setCurrentUser, session, viewedUser, onBackToOwnProfile }) {
+export default function ProfileSection({ currentUser, setCurrentUser, session, viewedUser, onBackToOwnProfile, onMessageUser }) {
   const [profileUser, setProfileUser] = useState(currentUser);
   const [userPosts, setUserPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   // Redesign state additions
   const [activeSubTab, setActiveSubTab] = useState('info'); // 'info' (editorial) vs 'stories' (general)
@@ -25,6 +26,16 @@ export default function ProfileSection({ currentUser, setCurrentUser, session, v
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Load Follow Status
+  useEffect(() => {
+    if (profileUser && currentUser && profileUser.username !== currentUser.username) {
+      fetch(`${API_BASE}/api/users/${profileUser.username}/follow-status?follower=${currentUser.username}`)
+        .then(res => res.json())
+        .then(data => setIsFollowing(data.isFollowing))
+        .catch(err => console.log('Error loading follow status:', err));
+    }
+  }, [profileUser, currentUser]);
 
   // Sync profile details for target viewing user
   useEffect(() => {
@@ -76,6 +87,34 @@ export default function ProfileSection({ currentUser, setCurrentUser, session, v
   useEffect(() => {
     fetchUserPosts();
   }, [profileUser?.username]);
+
+  const handleFollowToggle = async () => {
+    const endpoint = isFollowing ? 'unfollow' : 'follow';
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${profileUser.username}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ followerName: currentUser.username })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIsFollowing(!isFollowing);
+        setProfileUser(prev => ({
+          ...prev,
+          followersCount: data.followersCount
+        }));
+        // Update current logged-in user following count in React state
+        setCurrentUser(prev => ({
+          ...prev,
+          followingCount: data.followingCount
+        }));
+      }
+    } catch (err) {
+      console.log('Error toggling follow status:', err);
+    }
+  };
 
   // Handle avatar file picker
   const handleAvatarChange = (e) => {
@@ -305,6 +344,29 @@ export default function ProfileSection({ currentUser, setCurrentUser, session, v
                 </AnimatePresence>
               </button>
 
+              {/* Follow/Message buttons when viewing someone else's profile */}
+              {profileUser.username !== currentUser.username && (
+                <>
+                  <button
+                    onClick={handleFollowToggle}
+                    className={`px-4 py-2 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-stone/10 cursor-pointer ${
+                      isFollowing 
+                        ? 'bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white' 
+                        : 'bg-primary hover:bg-primary-pressed text-white'
+                    }`}
+                  >
+                    <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => onMessageUser && onMessageUser(profileUser.username)}
+                    className="bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white px-4 py-2 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-stone/10 cursor-pointer"
+                  >
+                    <span>Message</span>
+                  </button>
+                </>
+              )}
+
               {/* Google Sign Out Button (Only shown for own profile) */}
               {profileUser.username === currentUser.username && session && (
                 <button
@@ -328,11 +390,11 @@ export default function ProfileSection({ currentUser, setCurrentUser, session, v
               <span className="text-mute dark:text-mute-dark text-xs md:text-sm">posts</span>
             </div>
             <div className="flex flex-col md:flex-row md:gap-1 items-center">
-              <span className="font-extrabold text-ink dark:text-white">1.4k</span>
+              <span className="font-extrabold text-ink dark:text-white">{profileUser.followersCount || 0}</span>
               <span className="text-mute dark:text-mute-dark text-xs md:text-sm">followers</span>
             </div>
             <div className="flex flex-col md:flex-row md:gap-1 items-center">
-              <span className="font-extrabold text-ink dark:text-white">482</span>
+              <span className="font-extrabold text-ink dark:text-white">{profileUser.followingCount || 0}</span>
               <span className="text-mute dark:text-mute-dark text-xs md:text-sm">following</span>
             </div>
           </div>

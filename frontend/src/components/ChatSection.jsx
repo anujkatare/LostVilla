@@ -5,13 +5,30 @@ import { API_BASE, resolveUrl } from '../config.js';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabase.js';
 
-export default function ChatSection({ currentUser, session }) {
+export default function ChatSection({ currentUser, session, activeChatTarget, onChatLoaded }) {
   const [activeRoom, setActiveRoom] = useState('public'); // 'public' or a dynamic DM room
   const [dmTarget, setDmTarget] = useState('');
   const [joinedDmTarget, setJoinedDmTarget] = useState('');
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
+
+  // Handle programmatic DM initiation from profile pages
+  useEffect(() => {
+    if (activeChatTarget && currentUser && activeChatTarget !== currentUser.username) {
+      const targetUser = activeChatTarget.trim();
+      const usersHash = [currentUser.username, targetUser].sort().join('-vs-');
+      const privateRoomId = `dm:${usersHash}`;
+
+      setJoinedDmTarget(targetUser);
+      setActiveRoom(privateRoomId);
+      setDmTarget(targetUser);
+
+      if (onChatLoaded) {
+        onChatLoaded();
+      }
+    }
+  }, [activeChatTarget, currentUser?.username, onChatLoaded]);
 
   const socketRef = useRef(null);
   const streamEndRef = useRef(null);
