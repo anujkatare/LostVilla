@@ -70,6 +70,7 @@ app.get('/api/posts', async (req, res) => {
     }
 
     const posts = await Post.findAll({
+      where: filter,
       order: [['createdAt', 'DESC']]
     });
 

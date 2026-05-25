@@ -265,8 +265,10 @@ export default function HomeSection({ currentUser, theme }) {
   // Fetch posts from express server
   const fetchPosts = () => {
     setLoading(true);
-    const isEditorialQuery = activeSubTab === 'foryou' ? 'true' : 'false';
-    fetch(`${API_BASE}/api/posts?isEditorial=${isEditorialQuery}`)
+    const url = activeSubTab === 'feed'
+      ? `${API_BASE}/api/posts`
+      : `${API_BASE}/api/posts?isEditorial=true`;
+    fetch(url)
       .then(res => {
         if (!res.ok) throw new Error('API failed');
         return res.json();
