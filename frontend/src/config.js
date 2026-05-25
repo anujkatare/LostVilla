@@ -2,7 +2,7 @@
 // In development: uses localhost:5050 via Vite proxy
 // In production: uses VITE_API_BASE env variable (set in Vercel dashboard)
 
-export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5050';
+export const API_BASE = import.meta.env.VITE_API_BASE || 'https://lostvilla-backend.onrender.com';
 
 // Helper: resolve a media/avatar URL to absolute
 export const resolveUrl = (url) => {
