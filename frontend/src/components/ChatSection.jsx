@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Send, Users, ShieldAlert, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Send, Users, ShieldAlert, Sparkles, MessageSquare, AlertCircle, Lock, LogIn } from 'lucide-react';
 import { API_BASE, resolveUrl } from '../config.js';
+import { motion } from 'framer-motion';
+import { supabase } from '../supabase.js';
 
-export default function ChatSection({ currentUser }) {
+export default function ChatSection({ currentUser, session }) {
   const [activeRoom, setActiveRoom] = useState('public'); // 'public' or a dynamic DM room
   const [dmTarget, setDmTarget] = useState('');
   const [joinedDmTarget, setJoinedDmTarget] = useState('');
@@ -111,6 +113,53 @@ export default function ChatSection({ currentUser }) {
     setJoinedDmTarget('');
     setDmTarget('');
   };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error signing in:', err.message);
+    }
+  };
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 max-w-md mx-auto text-center min-h-[60vh]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-canvas/80 dark:bg-surface-card-dark/80 backdrop-blur-xl p-8 rounded-2xl border border-hairline dark:border-hairline-dark shadow-xl w-full relative overflow-hidden"
+        >
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
+            <Lock size={26} className="animate-bounce" />
+          </div>
+          <h2 className="heading-lg font-display font-extrabold text-ink dark:text-white mb-2">
+            Spectral Portal Locked
+          </h2>
+          <p className="text-xs text-mute dark:text-mute-dark mb-6 leading-relaxed max-w-xs mx-auto">
+            You must sign in to connect with fellow survivors, Whisper in private, and share real-time transmissions.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 border border-hairline dark:border-hairline-dark text-xs font-bold rounded-xl text-ink dark:text-white bg-surface-card hover:bg-surface-soft dark:bg-canvas-dark dark:hover:bg-secondary-bg-dark transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            <LogIn size={14} className="text-primary animate-pulse" />
+            <span>Sign In to Chat</span>
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[800px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 h-[72vh] md:h-[75vh]">

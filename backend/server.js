@@ -102,9 +102,9 @@ app.get('/api/posts', async (req, res) => {
 // Create new post (supports multiple photos OR a single video)
 app.post('/api/posts', upload.array('media', 10), async (req, res) => {
   try {
-    const { title, content, tags, type, isAi, isEditorial, authorName, authorAvatar } = req.body;
-    let mediaUrl = null;
-    let mediaType = null;
+    const { title, content, tags, type, isAi, isEditorial, authorName, authorAvatar, mediaUrl: bodyMediaUrl, mediaType: bodyMediaType } = req.body;
+    let mediaUrl = bodyMediaUrl || null;
+    let mediaType = bodyMediaType || null;
 
     if (req.files && req.files.length > 0) {
       const files = req.files;

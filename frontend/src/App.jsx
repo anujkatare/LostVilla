@@ -5,9 +5,11 @@ import SearchSection from './components/SearchSection.jsx';
 import PostSection from './components/PostSection.jsx';
 import ChatSection from './components/ChatSection.jsx';
 import ProfileSection from './components/ProfileSection.jsx';
-import { Ghost, Moon, Sun, ChevronDown, Flame, Compass, Heart } from 'lucide-react';
+import SignUpSection from './components/SignUpSection.jsx';
+import { Ghost, Moon, Sun, ChevronDown, Flame, Compass, Heart, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolveUrl, API_BASE } from './config.js';
+import { supabase } from './supabase.js';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -17,6 +19,7 @@ export default function App() {
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
     bio: 'Lost in the haunted woods. Looking for creatures.'
   });
+  const [session, setSession] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [history, setHistory] = useState([]);
 
@@ -32,18 +35,67 @@ export default function App() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Sync user profile state from API on load
+  const handleUserSync = async (googleUser) => {
+    const baseName = googleUser.user_metadata.full_name || googleUser.email.split('@')[0];
+    const cleanedName = baseName.replace(/[^a-zA-Z0-9]/g, '');
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${cleanedName}`);
+      if (res.ok) {
+        const userData = await res.json();
+        setCurrentUser({
+          ...userData,
+          avatarUrl: (userData.avatarUrl && userData.avatarUrl !== '/avatars/default.png') 
+            ? userData.avatarUrl 
+            : (googleUser.user_metadata.avatar_url || userData.avatarUrl),
+          bio: userData.bio || 'Wandering the Lost Villa gates.'
+        });
+        setActiveTab('profile');
+      }
+    } catch (err) {
+      console.error('Error syncing user with backend:', err);
+    }
+  };
+
+  // Sync Supabase Auth State
   useEffect(() => {
-    fetch(`${API_BASE}/api/users/${currentUser.username}`)
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Failed to load user');
-      })
-      .then(data => {
-        setCurrentUser(data);
-      })
-      .catch(err => console.log('Using default mock user:', err));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        handleUserSync(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        handleUserSync(newSession.user);
+      } else {
+        setCurrentUser({
+          username: 'SpookyAdventurer',
+          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          bio: 'Lost in the haunted woods. Looking for creatures.'
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Sync user profile state from API on load (only if not logged in via Google)
+  useEffect(() => {
+    if (!session) {
+      fetch(`${API_BASE}/api/users/${currentUser.username}`)
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Failed to load user');
+        })
+        .then(data => {
+          setCurrentUser(data);
+        })
+        .catch(err => console.log('Using default mock user:', err));
+    }
+  }, [session]);
 
   // Update theme on HTML tag when changed
   useEffect(() => {
@@ -71,17 +123,21 @@ export default function App() {
           <PostSection
             currentUser={currentUser}
             onPostCreated={() => setActiveTab('home')}
+            session={session}
           />
         );
       case 'chat':
-        return <ChatSection currentUser={currentUser} />;
+        return <ChatSection currentUser={currentUser} session={session} />;
       case 'profile':
         return (
           <ProfileSection
             currentUser={currentUser}
             setCurrentUser={setCurrentUser}
+            session={session}
           />
         );
+      case 'signup':
+        return <SignUpSection />;
       default:
         return <HomeSection currentUser={currentUser} theme={theme} />;
     }
@@ -131,21 +187,31 @@ export default function App() {
               )}
             </button>
 
-            {/* Quick Profile Avatar Shortcut */}
-            <button
-              onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
-              className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${activeTab === 'profile' ? 'border-primary scale-105' : 'border-transparent'
-                }`}
-            >
-              <img
-                src={resolveUrl(currentUser?.avatarUrl || '')}
-                alt={currentUser.username}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
-                }}
-              />
-            </button>
+            {/* Google Login / Quick Profile Avatar Shortcut */}
+            {!session ? (
+              <button
+                onClick={() => { setActiveTab('signup'); setIsMenuOpen(false); }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-primary hover:bg-primary-pressed text-white shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+              >
+                <LogIn size={13} />
+                <span>Sign In</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
+                className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${activeTab === 'profile' ? 'border-primary scale-105' : 'border-transparent'
+                  }`}
+              >
+                <img
+                  src={resolveUrl(currentUser?.avatarUrl || '')}
+                  alt={currentUser.username}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
+                  }}
+                />
+              </button>
+            )}
           </div>
         </div>
 

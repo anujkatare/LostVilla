@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, CheckCircle, AlertTriangle, FileVideo, FileImage } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertTriangle, FileVideo, FileImage, Lock, LogIn } from 'lucide-react';
 import { API_BASE } from '../config.js';
+import { motion } from 'framer-motion';
+import { supabase } from '../supabase.js';
 
-export default function PostSection({ currentUser, onPostCreated }) {
+export default function PostSection({ currentUser, onPostCreated, session }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
@@ -135,6 +137,28 @@ export default function PostSection({ currentUser, onPostCreated }) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const uploadToSupabase = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('media')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('media')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   // Submit story to API endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -147,6 +171,24 @@ export default function PostSection({ currentUser, onPostCreated }) {
     setError('');
 
     try {
+      let finalMediaUrl = null;
+      let finalMediaType = null;
+
+      if (mediaFiles.length > 0) {
+        const uploadedUrls = [];
+        for (const file of mediaFiles) {
+          const url = await uploadToSupabase(file);
+          uploadedUrls.push(url);
+        }
+
+        finalMediaType = mediaType;
+        if (mediaType === 'video') {
+          finalMediaUrl = uploadedUrls[0];
+        } else {
+          finalMediaUrl = uploadedUrls.length > 1 ? JSON.stringify(uploadedUrls) : uploadedUrls[0];
+        }
+      }
+
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('content', content.trim());
@@ -157,9 +199,10 @@ export default function PostSection({ currentUser, onPostCreated }) {
       formData.append('authorName', currentUser.username);
       formData.append('authorAvatar', currentUser.avatarUrl);
 
-      mediaFiles.forEach((file) => {
-        formData.append('media', file);
-      });
+      if (finalMediaUrl) {
+        formData.append('mediaUrl', finalMediaUrl);
+        formData.append('mediaType', finalMediaType);
+      }
 
       const response = await fetch(`${API_BASE}/api/posts`, {
         method: 'POST',
@@ -191,6 +234,53 @@ export default function PostSection({ currentUser, onPostCreated }) {
       setSubmitting(false);
     }
   };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error signing in:', err.message);
+    }
+  };
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 max-w-md mx-auto text-center min-h-[60vh]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-canvas/80 dark:bg-surface-card-dark/80 backdrop-blur-xl p-8 rounded-2xl border border-hairline dark:border-hairline-dark shadow-xl w-full relative overflow-hidden"
+        >
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
+            <Lock size={26} className="animate-bounce" />
+          </div>
+          <h2 className="heading-lg font-display font-extrabold text-ink dark:text-white mb-2">
+            Scribe Registry Locked
+          </h2>
+          <p className="text-xs text-mute dark:text-mute-dark mb-6 leading-relaxed max-w-xs mx-auto">
+            You must sign in to submit sighting logs, document eerie chronicles, and share evidence with other investigators.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 border border-hairline dark:border-hairline-dark text-xs font-bold rounded-xl text-ink dark:text-white bg-surface-card hover:bg-surface-soft dark:bg-canvas-dark dark:hover:bg-secondary-bg-dark transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            <LogIn size={14} className="text-primary animate-pulse" />
+            <span>Sign In to Post</span>
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[640px] mx-auto bg-canvas dark:bg-surface-card-dark rounded-md p-6 border border-hairline dark:border-hairline-dark">

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2, FileText, BookOpen } from 'lucide-react';
+import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2, FileText, BookOpen, LogOut, Lock, LogIn } from 'lucide-react';
 import { resolveUrl, API_BASE } from '../config.js';
+import { supabase } from '../supabase.js';
 
-export default function ProfileSection({ currentUser, setCurrentUser }) {
+export default function ProfileSection({ currentUser, setCurrentUser, session }) {
   const [userPosts, setUserPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -144,6 +145,53 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
     return post.isEditorial === false;
   });
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error signing in:', err.message);
+    }
+  };
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 max-w-md mx-auto text-center min-h-[60vh]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-canvas/80 dark:bg-surface-card-dark/80 backdrop-blur-xl p-8 rounded-2xl border border-hairline dark:border-hairline-dark shadow-xl w-full relative overflow-hidden"
+        >
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
+            <Lock size={26} className="animate-bounce" />
+          </div>
+          <h2 className="heading-lg font-display font-extrabold text-ink dark:text-white mb-2">
+            Scribe Profile Locked
+          </h2>
+          <p className="text-xs text-mute dark:text-mute-dark mb-6 leading-relaxed max-w-xs mx-auto">
+            You must sign in to claim your profile, chronicle mysterious sightings, and access the lost archives.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 border border-hairline dark:border-hairline-dark text-xs font-bold rounded-xl text-ink dark:text-white bg-surface-card hover:bg-surface-soft dark:bg-canvas-dark dark:hover:bg-secondary-bg-dark transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            <LogIn size={14} className="text-primary animate-pulse" />
+            <span>Sign In to Explore</span>
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8 max-w-[840px] mx-auto">
       
@@ -217,6 +265,19 @@ export default function ProfileSection({ currentUser, setCurrentUser }) {
                   )}
                 </AnimatePresence>
               </button>
+
+              {/* Google Sign Out Button */}
+              {session && (
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-transparent cursor-pointer"
+                >
+                  <LogOut size={12} />
+                  <span>Log Out</span>
+                </button>
+              )}
 
             </div>
           </div>
