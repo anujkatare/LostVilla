@@ -35,6 +35,11 @@ export const User = sequelize.define('User', {
     type: DataTypes.STRING,
     defaultValue: 'they/them'
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
   followersCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0

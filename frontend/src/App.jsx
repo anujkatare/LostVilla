@@ -14,16 +14,34 @@ import { supabase } from './supabase.js';
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [theme, setTheme] = useState('light'); // 'light' (Warm-Cream) or 'dark' (Abyss-Black)
-  const [currentUser, setCurrentUser] = useState({
-    username: 'SpookyAdventurer',
-    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-    bio: 'Lost in the haunted woods. Looking for creatures.'
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lostvilla_user');
+      return saved ? JSON.parse(saved) : {
+        username: 'SpookyAdventurer',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        bio: 'Lost in the haunted woods. Looking for creatures.'
+      };
+    } catch (e) {
+      return {
+        username: 'SpookyAdventurer',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        bio: 'Lost in the haunted woods. Looking for creatures.'
+      };
+    }
   });
   const [session, setSession] = useState(null);
   const [viewedUser, setViewedUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const [activeChatTarget, setActiveChatTarget] = useState(null);
+
+  // Sync state changes to localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('lostvilla_user', JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
 
   const handleTabChange = (tab) => {
     if (tab === 'profile') {
@@ -66,6 +84,7 @@ export default function App() {
         },
         body: JSON.stringify({
           username: cleanedName,
+          email: googleUser.email,
           avatarUrl: googleUser.user_metadata.avatar_url,
           bio: 'Just entered the Lost Villa gates.',
           pronouns: 'they/them'

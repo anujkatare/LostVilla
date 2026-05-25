@@ -207,16 +207,39 @@ app.get('/api/users/:username', async (req, res) => {
 // Sync Google OAuth User Details with SQLite
 app.post('/api/users/sync', async (req, res) => {
   try {
-    const { username, avatarUrl, bio, pronouns } = req.body;
-    let user = await User.findOne({ where: { username } });
+    const { username, avatarUrl, bio, pronouns, email } = req.body;
+    let user = null;
+
+    if (email) {
+      user = await User.findOne({ where: { email } });
+    }
+
     if (!user) {
+      // Fallback or find by username if email not recorded yet
+      user = await User.findOne({ where: { username } });
+    }
+
+    if (!user) {
+      // Check if the generated username is already in use by someone else
+      let finalUsername = username;
+      const taken = await User.findOne({ where: { username } });
+      if (taken) {
+        finalUsername = `${username}_${Math.floor(Math.random() * 1000)}`;
+      }
+
       user = await User.create({
-        username,
+        username: finalUsername,
+        email: email || null,
         avatarUrl: avatarUrl || '/avatars/default.png',
         bio: bio || 'Just entered the Lost Villa gates.',
         pronouns: pronouns || 'they/them'
       });
     } else {
+      // If user exists but email is not yet saved, write it now
+      if (email && !user.email) {
+        user.email = email;
+        await user.save();
+      }
       // If user exists but still has default avatar, sync it with Google's high-res avatar
       if ((user.avatarUrl === '/avatars/default.png' || !user.avatarUrl) && avatarUrl) {
         user.avatarUrl = avatarUrl;
