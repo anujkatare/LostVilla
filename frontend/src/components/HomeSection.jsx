@@ -182,7 +182,7 @@ function PostMediaRenderer({ post, isModal = false, onClick = null }) {
   );
 }
 
-export default function HomeSection({ currentUser, theme }) {
+export default function HomeSection({ currentUser, theme, onUserClick }) {
   const [activeSubTab, setActiveSubTab] = useState('feed'); // 'feed' or 'foryou'
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -313,7 +313,10 @@ export default function HomeSection({ currentUser, theme }) {
           >
             {/* 1. Header: Author Scribe Info & Type Badges */}
             <div className="flex items-center justify-between p-4 border-b border-hairline/40 dark:border-hairline-dark/40">
-              <div className="flex items-center gap-2.5">
+              <div 
+                className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                onClick={() => onUserClick(post.authorName, post.authorAvatar)}
+              >
                 <img
                   src={resolveUrl(post.authorAvatar || '')}
                   alt={post.authorName}
@@ -701,11 +704,15 @@ export default function HomeSection({ currentUser, theme }) {
 
                 <h2 className="heading-xl text-ink dark:text-white font-extrabold tracking-tight mt-1 leading-tight text-left">
                   {selectedPost.title}
-                </h2>
-
-                {/* Author Block */}
+                </h2>                 {/* Author Block */}
                 <div className="flex justify-between items-center py-2.5 border-y border-hairline dark:border-hairline-dark my-1">
-                  <div className="flex items-center gap-2.5">
+                  <div 
+                    className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                    onClick={() => {
+                      setSelectedPost(null); // Close modal
+                      onUserClick(selectedPost.authorName, selectedPost.authorAvatar);
+                    }}
+                  >
                     <img
                       src={resolveUrl(selectedPost.authorAvatar || '')}
                       alt={selectedPost.authorName}

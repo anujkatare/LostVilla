@@ -204,6 +204,31 @@ app.get('/api/users/:username', async (req, res) => {
   }
 });
 
+// Sync Google OAuth User Details with SQLite
+app.post('/api/users/sync', async (req, res) => {
+  try {
+    const { username, avatarUrl, bio, pronouns } = req.body;
+    let user = await User.findOne({ where: { username } });
+    if (!user) {
+      user = await User.create({
+        username,
+        avatarUrl: avatarUrl || '/avatars/default.png',
+        bio: bio || 'Just entered the Lost Villa gates.',
+        pronouns: pronouns || 'they/them'
+      });
+    } else {
+      // If user exists but still has default avatar, sync it with Google's high-res avatar
+      if ((user.avatarUrl === '/avatars/default.png' || !user.avatarUrl) && avatarUrl) {
+        user.avatarUrl = avatarUrl;
+        await user.save();
+      }
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Update profile details
 app.post('/api/users/profile', upload.single('avatar'), async (req, res) => {
   try {

@@ -20,8 +20,21 @@ export default function App() {
     bio: 'Lost in the haunted woods. Looking for creatures.'
   });
   const [session, setSession] = useState(null);
+  const [viewedUser, setViewedUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [history, setHistory] = useState([]);
+
+  const handleTabChange = (tab) => {
+    if (tab === 'profile') {
+      setViewedUser(null); // Reset when navigating to own profile
+    }
+    setActiveTab(tab);
+  };
+
+  const handleUserClick = (username, avatarUrl) => {
+    setViewedUser({ username, avatarUrl });
+    setActiveTab('profile');
+  };
 
   const handleToggleMenu = () => {
     if (!isMenuOpen) {
@@ -40,16 +53,22 @@ export default function App() {
     const cleanedName = baseName.replace(/[^a-zA-Z0-9]/g, '');
     
     try {
-      const res = await fetch(`${API_BASE}/api/users/${cleanedName}`);
+      const res = await fetch(`${API_BASE}/api/users/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: cleanedName,
+          avatarUrl: googleUser.user_metadata.avatar_url,
+          bio: 'Just entered the Lost Villa gates.',
+          pronouns: 'they/them'
+        })
+      });
+      
       if (res.ok) {
         const userData = await res.json();
-        setCurrentUser({
-          ...userData,
-          avatarUrl: (userData.avatarUrl && userData.avatarUrl !== '/avatars/default.png') 
-            ? userData.avatarUrl 
-            : (googleUser.user_metadata.avatar_url || userData.avatarUrl),
-          bio: userData.bio || 'Wandering the Lost Villa gates.'
-        });
+        setCurrentUser(userData);
         if (shouldRedirect) {
           setActiveTab('profile');
         }
@@ -119,14 +138,14 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeSection currentUser={currentUser} theme={theme} />;
+        return <HomeSection currentUser={currentUser} theme={theme} onUserClick={handleUserClick} />;
       case 'search':
         return <SearchSection />;
       case 'post':
         return (
           <PostSection
             currentUser={currentUser}
-            onPostCreated={() => setActiveTab('home')}
+            onPostCreated={() => handleTabChange('home')}
             session={session}
           />
         );
@@ -138,12 +157,14 @@ export default function App() {
             currentUser={currentUser}
             setCurrentUser={setCurrentUser}
             session={session}
+            viewedUser={viewedUser}
+            onBackToOwnProfile={() => setViewedUser(null)}
           />
         );
       case 'signup':
         return <SignUpSection />;
       default:
-        return <HomeSection currentUser={currentUser} theme={theme} />;
+        return <HomeSection currentUser={currentUser} theme={theme} onUserClick={handleUserClick} />;
     }
   };
 
@@ -194,7 +215,7 @@ export default function App() {
             {/* Google Login / Quick Profile Avatar Shortcut */}
             {!session ? (
               <button
-                onClick={() => { setActiveTab('signup'); setIsMenuOpen(false); }}
+                onClick={() => { handleTabChange('signup'); setIsMenuOpen(false); }}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-primary hover:bg-primary-pressed text-white shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
               >
                 <LogIn size={13} />
@@ -202,7 +223,7 @@ export default function App() {
               </button>
             ) : (
               <button
-                onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
+                onClick={() => { handleTabChange('profile'); setIsMenuOpen(false); }}
                 className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${activeTab === 'profile' ? 'border-primary scale-105' : 'border-transparent'
                   }`}
               >
@@ -364,7 +385,7 @@ export default function App() {
       </main>
 
       {/* Instagram-style Fixed Bottom Tab Nav bar */}
-      <BottomNavbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <BottomNavbar activeTab={activeTab} setActiveTab={handleTabChange} />
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { Edit2, ShieldAlert, Heart, Flame, Settings, Upload, CheckCircle, Share2
 import { resolveUrl, API_BASE } from '../config.js';
 import { supabase } from '../supabase.js';
 
-export default function ProfileSection({ currentUser, setCurrentUser, session }) {
+export default function ProfileSection({ currentUser, setCurrentUser, session, viewedUser, onBackToOwnProfile }) {
+  const [profileUser, setProfileUser] = useState(currentUser);
   const [userPosts, setUserPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -25,8 +26,34 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Sync profile details for target viewing user
+  useEffect(() => {
+    const userToLoad = viewedUser || currentUser;
+    
+    // Fetch full bio & pronouns from SQLite
+    fetch(`${API_BASE}/api/users/${userToLoad.username}`)
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('User not found');
+      })
+      .then(data => {
+        const finalUser = {
+          ...data,
+          avatarUrl: (data.avatarUrl && data.avatarUrl !== '/avatars/default.png') 
+            ? data.avatarUrl 
+            : (userToLoad.avatarUrl || data.avatarUrl)
+        };
+        setProfileUser(finalUser);
+      })
+      .catch(err => {
+        console.warn('Error loading user details:', err);
+        setProfileUser(userToLoad);
+      });
+  }, [viewedUser, currentUser]);
+
   // Fetch only posts submitted by this active user
   const fetchUserPosts = () => {
+    if (!profileUser?.username) return;
     setLoadingPosts(true);
     fetch(`${API_BASE}/api/posts`)
       .then(res => {
@@ -35,7 +62,7 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
       })
       .then(data => {
         const postsList = Array.isArray(data) ? data : [];
-        const personal = postsList.filter(p => p.authorName === currentUser.username);
+        const personal = postsList.filter(p => p.authorName === profileUser.username);
         setUserPosts(personal);
         setLoadingPosts(false);
       })
@@ -48,7 +75,7 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
 
   useEffect(() => {
     fetchUserPosts();
-  }, [currentUser.username]);
+  }, [profileUser?.username]);
 
   // Handle avatar file picker
   const handleAvatarChange = (e) => {
@@ -195,14 +222,24 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
   return (
     <div className="flex flex-col gap-8 max-w-[840px] mx-auto">
       
+      {/* Back button if viewing another investigator's profile */}
+      {viewedUser && (
+        <button
+          onClick={onBackToOwnProfile}
+          className="self-start flex items-center gap-2 mb-1 px-4 py-2 text-xs font-bold text-ink dark:text-white bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark rounded-md transition-all active:scale-95 border border-stone/10 cursor-pointer"
+        >
+          <span>← Back to My Profile</span>
+        </button>
+      )}
+
       {/* Profile Header Details card (Premium Instagram Aesthetic) */}
       <div className="bg-canvas dark:bg-surface-card-dark rounded-md p-6 md:p-8 border border-hairline dark:border-hairline-dark flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left transition-all duration-300">
         
         {/* Profile Avatar Frame (larger size layout) */}
         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-primary shrink-0 relative bg-surface-card shadow-md">
           <img 
-            src={resolveUrl(currentUser?.avatarUrl || '')} 
-            alt={currentUser.username} 
+            src={resolveUrl(profileUser?.avatarUrl || '')} 
+            alt={profileUser.username} 
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
@@ -216,32 +253,34 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
           {/* Action cluster row (Username, Edit profile, Share profile) */}
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <h2 className="heading-lg font-extrabold text-ink dark:text-white leading-none flex items-center gap-2 flex-wrap justify-center md:justify-start">
-              <span>{currentUser.username}</span>
-              {currentUser.pronouns && (
+              <span>{profileUser.username}</span>
+              {profileUser.pronouns && (
                 <span className="text-xs font-medium text-mute dark:text-mute-dark lowercase tracking-normal bg-secondary-bg/50 dark:bg-secondary-bg-dark/50 px-2 py-0.5 rounded-full border border-stone/5">
-                  ({currentUser.pronouns})
+                  ({profileUser.pronouns})
                 </span>
               )}
             </h2>
             
             <div className="flex flex-wrap gap-2 justify-center md:justify-start">
               
-              {/* Edit Profile Button */}
-              <button
-                onClick={() => {
-                  setUsername(currentUser.username);
-                  setBio(currentUser.bio);
-                  setPronouns(currentUser.pronouns || '');
-                  setAvatarPreview('');
-                  setAvatarFile(null);
-                  setError('');
-                  setIsEditMode(true);
-                }}
-                className="bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white px-4 py-2 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-stone/10"
-              >
-                <Edit2 size={12} />
-                <span>Edit Profile</span>
-              </button>
+              {/* Edit Profile Button (Only shown for own profile) */}
+              {profileUser.username === currentUser.username && (
+                <button
+                  onClick={() => {
+                    setUsername(currentUser.username);
+                    setBio(currentUser.bio);
+                    setPronouns(currentUser.pronouns || '');
+                    setAvatarPreview('');
+                    setAvatarFile(null);
+                    setError('');
+                    setIsEditMode(true);
+                  }}
+                  className="bg-secondary-bg hover:bg-secondary-pressed dark:bg-secondary-bg-dark dark:hover:bg-secondary-pressed-dark text-ink dark:text-white px-4 py-2 rounded-md text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-stone/10"
+                >
+                  <Edit2 size={12} />
+                  <span>Edit Profile</span>
+                </button>
+              )}
 
               {/* Share Profile Button */}
               <button
@@ -266,8 +305,8 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
                 </AnimatePresence>
               </button>
 
-              {/* Google Sign Out Button */}
-              {session && (
+              {/* Google Sign Out Button (Only shown for own profile) */}
+              {profileUser.username === currentUser.username && session && (
                 <button
                   onClick={async () => {
                     await supabase.auth.signOut();
@@ -304,7 +343,7 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
               Biography Scribe
             </span>
             <p className="text-sm text-body dark:text-body-dark max-w-[540px] leading-relaxed whitespace-pre-line">
-              {currentUser.bio}
+              {profileUser.bio}
             </p>
           </div>
 
