@@ -141,8 +141,8 @@ export default function ProfileSection({ currentUser, setCurrentUser, session })
 
   // Filter personal user posts by subtab logic
   const filteredUserPosts = userPosts.filter(post => {
-    if (activeSubTab === 'info') return post.isEditorial === true;
-    return post.isEditorial === false;
+    if (activeSubTab === 'info') return post.type === 'info';
+    return post.type === 'story';
   });
 
   const handleGoogleLogin = async () => {

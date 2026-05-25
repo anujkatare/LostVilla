@@ -349,8 +349,6 @@ export default function PostSection({ currentUser, onPostCreated, session }) {
           >
             <option value="story">Story</option>
             <option value="info">Info</option>
-            <option value="fictional">Fictional</option>
-            <option value="real incident">Real Incident</option>
           </select>
         </div>
 

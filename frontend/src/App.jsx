@@ -35,7 +35,7 @@ export default function App() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleUserSync = async (googleUser) => {
+  const handleUserSync = async (googleUser, shouldRedirect = false) => {
     const baseName = googleUser.user_metadata.full_name || googleUser.email.split('@')[0];
     const cleanedName = baseName.replace(/[^a-zA-Z0-9]/g, '');
     
@@ -50,7 +50,9 @@ export default function App() {
             : (googleUser.user_metadata.avatar_url || userData.avatarUrl),
           bio: userData.bio || 'Wandering the Lost Villa gates.'
         });
-        setActiveTab('profile');
+        if (shouldRedirect) {
+          setActiveTab('profile');
+        }
       }
     } catch (err) {
       console.error('Error syncing user with backend:', err);
@@ -62,14 +64,16 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        handleUserSync(session.user);
+        handleUserSync(session.user, false); // Don't redirect on initial load
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
-        handleUserSync(newSession.user);
+        // Only redirect to profile if they just signed in
+        const shouldRedirect = event === 'SIGNED_IN';
+        handleUserSync(newSession.user, shouldRedirect);
       } else {
         setCurrentUser({
           username: 'SpookyAdventurer',

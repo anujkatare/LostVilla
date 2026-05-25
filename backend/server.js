@@ -32,9 +32,37 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploads statically
 app.use('/uploads', express.static(uploadsDir));
 
+// Clean up uploads directory to keep at most 10 files (FIFO)
+const cleanUploadsDirectory = () => {
+  try {
+    const files = fs.readdirSync(uploadsDir);
+    if (files.length <= 10) return;
+
+    // Get file details with stats for birthtime (creation time)
+    const fileStats = files.map(file => {
+      const filePath = path.join(uploadsDir, file);
+      const stat = fs.statSync(filePath);
+      return { file, filePath, time: stat.birthtimeMs };
+    });
+
+    // Sort by oldest first (ascending time)
+    fileStats.sort((a, b) => a.time - b.time);
+
+    // Calculate how many to delete
+    const toDeleteCount = fileStats.length - 10;
+    for (let i = 0; i < toDeleteCount; i++) {
+      fs.unlinkSync(fileStats[i].filePath);
+      console.log(`FIFO Cleaned: Deleted old file ${fileStats[i].file}`);
+    }
+  } catch (error) {
+    console.error('Failed to clean uploads directory:', error.message);
+  }
+};
+
 // Multer Storage Configuration for handling media uploads (images and videos)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    cleanUploadsDirectory();
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
