@@ -112,8 +112,8 @@ export const Message = sequelize.define('Message', {
 export async function initDb() {
   await sequelize.sync({ alter: true });
 
-  const postCount = await Post.count();
-  if (postCount === 0) {
+  const userCount = await User.count();
+  if (userCount === 0) {
     console.log('Database empty. Seeding eerie records into Lost Villa database...');
 
     // Create default accounts
